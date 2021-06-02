@@ -3,6 +3,7 @@
 const Hapi = require('@hapi/hapi');
 const Joi = require('joi');
 const constants = require('./constants');
+const taskHelpers = require('./taskHelpers');
 let sampleData = require('./sample-data');
 
 const init = async () => {
@@ -21,13 +22,13 @@ const init = async () => {
   });
 
 
-  // Returns an array of tasks by default.
+  // Returns an array of active tasks by default.
   // If groupBy query is specified, returns an object with keys for each grouped array of tasks
   server.route({
     method: 'GET',
     path: '/{userId}/tasks',
     handler: (request, h) => {
-      const usersTasks = sampleData.tasks.filter(task => task.userId == request.params.userId);
+      const usersTasks = sampleData.tasks.filter(task => task.userId == request.params.userId && !task.deletedAt);
 
       if (request.query && request.query.groupBy == constants.GROUPINGS.STATUS) {
         const tasksByStatus = {};
@@ -49,6 +50,7 @@ const init = async () => {
         });
         return tasksByDueDate;
       }
+
       return usersTasks;
     },
     options: {
@@ -89,7 +91,7 @@ const init = async () => {
     }
   });
 
-  // 
+  // Create a new task for a specific user
   server.route({
     method: 'POST',
     path: '/{userId}/tasks',
@@ -131,12 +133,13 @@ const init = async () => {
     }
   });
 
+  // Update a specific task and return all active tasks
   server.route({
     method: 'PUT',
     path: '/{userId}/tasks/{taskId}',
     handler: (request, h) => {
       // TO DO: find and update requrested task
-      return sampleData.tasks;
+      return sampleData.tasks.filter(task => !task.deletedAt);
     },
     options: {
       validate: {
@@ -164,12 +167,18 @@ const init = async () => {
     }
   });
 
+  // Delete a specific task and return all active tasks
   server.route({
       method: 'DELETE',
       path: '/{userId}/tasks/{taskId}',
       handler: (request, h) => {
-        // TO DO: find and update deleted_at for requested task
-        return sampleData.tasks;
+        sampleData.tasks.forEach((task, index) => {
+          if (task.id == request.params.taskId) {
+            sampleData.tasks[index].deletedAt = new Date();
+            console.log('deleted item: ' + JSON.stringify(sampleData.tasks[index]));
+          }
+        });
+        return sampleData.tasks.filter(task => !task.deletedAt);
       },
       options: {
         validate: {
