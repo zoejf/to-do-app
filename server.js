@@ -21,23 +21,52 @@ const init = async () => {
   });
 
 
-// TASKS CRUD
+  // Returns an array of tasks by default.
+  // If groupBy query is specified, returns an object with keys for each grouped array of tasks
   server.route({
     method: 'GET',
     path: '/{userId}/tasks',
     handler: (request, h) => {
       const usersTasks = sampleData.tasks.filter(task => task.userId == request.params.userId);
+
+      if (request.query && request.query.groupBy == constants.GROUPINGS.STATUS) {
+        const tasksByStatus = {};
+        Object.values(constants.STATUSES).forEach(status => {
+          console.log('status ' + status);
+          const tasksPerStatus = usersTasks.filter(task => task.status == status);
+          tasksByStatus[status] = tasksPerStatus;
+        });
+        return tasksByStatus;
+      }
+
+      if (request.query && request.query.groupBy == constants.GROUPINGS.DUEDATE) {
+        const tasksByDueDate = {};
+        sampleData.tasks.forEach(task => {
+          if (!tasksByDueDate[task.dueDate]) {
+            tasksByDueDate[task.dueDate] = [];
+          }
+          tasksByDueDate[task.dueDate].push(task);
+        });
+        return tasksByDueDate;
+      }
       return usersTasks;
     },
     options: {
       validate: {
         params: Joi.object({
           userId: Joi.number().integer().min(1)
-        })
+        }),
+        query: Joi.object({
+          groupBy: Joi.string().valid(constants.GROUPINGS.DUEDATE, constants.GROUPINGS.STATUS)
+        }).optional()
+      },
+      response: {
+        failAction: 'log'
       }
     }
   });
 
+  // Returns a single task based on requested user and id
   server.route({
     method: 'GET',
     path: '/{userId}/tasks/{taskId}',
@@ -53,10 +82,14 @@ const init = async () => {
           userId: Joi.number().integer().min(1),
           taskId: Joi.number().integer().min(1)
         })
+      },
+      response: {
+        failAction: 'log'
       }
     }
   });
 
+  // 
   server.route({
     method: 'POST',
     path: '/{userId}/tasks',
@@ -65,7 +98,7 @@ const init = async () => {
         id: sampleData.tasks.length + 1, // hack to get next number, assuming increasing integers for now
         title: request.payload.title,
         description: request.payload.description,
-        dueDate: request.payload.dueDate,
+        dueDate: request.payload.dueDate, // TO DO: add date formatting validation/ normalizition
         userId: request.params.userId,
         createdAt: new Date(),
         deletedAt: null

@@ -4,6 +4,12 @@ const statuses = {
   DONE: 'DONE'
 };
 
+const groupings = {
+  DUEDATE: 'dueDate',
+  STATUS: 'status'
+}
+
 module.exports = {
-  STATUSES: statuses
+  STATUSES: statuses,
+  GROUPINGS: groupings
 }
