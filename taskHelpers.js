@@ -1,5 +1,5 @@
 module.exports = {
-  getAllActiveTasks = function (taskList) {
+  getAllActiveTasks: function (taskList) {
     return taskList.filter(task => !task.deletedAt);
   }
 }

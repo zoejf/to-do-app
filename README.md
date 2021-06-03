@@ -11,5 +11,5 @@ Simple Node/Hapi API to support a Trello-like To Do List UI
 - `curl -X POST -H "Content-Type: application/json" -d '{"title": "my task", "description": "some description", "status": "PENDING"}' http://localhost:3000/1/tasks`
 
 ## Next Improvements
-- Add database and ORM (Sequelize)
+- Add database and ORM (Postgres, Sequelize)
 - Tests

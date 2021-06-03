@@ -33,7 +33,6 @@ const init = async () => {
       if (request.query && request.query.groupBy == constants.GROUPINGS.STATUS) {
         const tasksByStatus = {};
         Object.values(constants.STATUSES).forEach(status => {
-          console.log('status ' + status);
           const tasksPerStatus = usersTasks.filter(task => task.status == status);
           tasksByStatus[status] = tasksPerStatus;
         });
@@ -138,8 +137,22 @@ const init = async () => {
     method: 'PUT',
     path: '/{userId}/tasks/{taskId}',
     handler: (request, h) => {
-      // TO DO: find and update requrested task
-      return sampleData.tasks.filter(task => !task.deletedAt);
+      sampleData.tasks.forEach((task, index) => {
+        if (task.id == request.params.taskId) {
+          const newTaskData = {
+            id: task.id,
+            title: request.payload.title,
+            description: request.payload.description,
+            dueDate: request.payload.dueDate,
+            userId: request.params.userId,
+            createdAt: task.createdAt,
+            deletedAt: task.deletedAt
+          };
+          sampleData.tasks[index] = newTaskData;
+        }
+      });
+      
+      return taskHelpers.getAllActiveTasks(sampleData.tasks);
     },
     options: {
       validate: {
@@ -175,10 +188,9 @@ const init = async () => {
         sampleData.tasks.forEach((task, index) => {
           if (task.id == request.params.taskId) {
             sampleData.tasks[index].deletedAt = new Date();
-            console.log('deleted item: ' + JSON.stringify(sampleData.tasks[index]));
           }
         });
-        return sampleData.tasks.filter(task => !task.deletedAt);
+        return taskHelpers.getAllActiveTasks(sampleData.tasks);
       },
       options: {
         validate: {
